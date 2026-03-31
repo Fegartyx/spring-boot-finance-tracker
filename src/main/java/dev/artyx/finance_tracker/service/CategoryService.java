@@ -29,7 +29,7 @@ public class CategoryService {
     }
 
     @Transactional
-    public void createCategory(User user, CreateCategoryRequest request) {
+    public void createCategory(CreateCategoryRequest request) {
         validationService.validate(request);
 
         Category category = new Category();
@@ -39,7 +39,7 @@ public class CategoryService {
     }
 
     @Transactional
-    public CategoryResponse editCategory(User user, UpdateCategoryRequest request) {
+    public CategoryResponse editCategory(UpdateCategoryRequest request) {
         validationService.validate(request);
 
         Category category = categoryRepository.findById(request.getCategoryId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
@@ -54,7 +54,7 @@ public class CategoryService {
     }
 
     @Transactional
-    public void deleteCategory(User user, Long id) {
+    public void deleteCategory(Long id) {
         Category category = categoryRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
         categoryRepository.delete(category);
     }
@@ -68,10 +68,6 @@ public class CategoryService {
     @Transactional
     public List<CategoryResponse> getAllCategories() {
         List<Category> categories = categoryRepository.findAll();
-        List<CategoryResponse> categoriesResponse = new ArrayList<>();
-        for (Category category : categories) {
-            categoriesResponse.add(toCategoryResponse(category));
-        }
-        return categoriesResponse;
+        return categories.stream().map(this::toCategoryResponse).toList();
     }
 }

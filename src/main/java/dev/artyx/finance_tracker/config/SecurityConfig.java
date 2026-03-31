@@ -22,7 +22,9 @@ public class SecurityConfig {
 
                 // 2. Atur siapa yang boleh lewat
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/users/**", "/api/auth/**", "/api/category/**", "/api/categories").permitAll() // Register & Login bebas
+                        .requestMatchers("/api/users/**", "/api/auth/**", "/api/category/**", "/api/categories",
+                                "/api/wallet/**", "/api/wallets"
+                        ).permitAll() // Register & Login bebas
                         .anyRequest().authenticated()                // Sisanya wajib login
                 )
 

@@ -18,7 +18,7 @@ public class CategoryController {
 
     @PostMapping(path = "/api/category", consumes = "application/json", produces = "application/json")
     public WebResponse<String> createCategory(User user, @RequestBody CreateCategoryRequest request) {
-        categoryService.createCategory(user, request);
+        categoryService.createCategory(request);
         return WebResponse.<String>builder()
                 .data("Category created successfully")
                 .build();
@@ -27,7 +27,7 @@ public class CategoryController {
     @PutMapping(path = "/api/category/{categoryId}", consumes = "application/json", produces = "application/json")
     public WebResponse<CategoryResponse> updateCategory(User user, @PathVariable Long categoryId, @RequestBody UpdateCategoryRequest request) {
         request.setCategoryId(categoryId);
-        CategoryResponse categoryResponse = categoryService.editCategory(user, request);
+        CategoryResponse categoryResponse = categoryService.editCategory(request);
         return WebResponse.<CategoryResponse>builder()
                 .data(categoryResponse)
                 .build();
@@ -35,7 +35,7 @@ public class CategoryController {
 
     @DeleteMapping(path = "/api/category/{categoryId}", produces = "application/json")
     public WebResponse<String> deleteCategory(User user, @PathVariable Long categoryId) {
-        categoryService.deleteCategory(user, categoryId);
+        categoryService.deleteCategory(categoryId);
         return WebResponse.<String>builder()
                 .data("Category deleted successfully")
                 .build();
