@@ -16,34 +16,35 @@ import jakarta.servlet.http.HttpServletResponse;
 @EnableWebSecurity
 public class SecurityConfig {
 
-        @Bean
-        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-                http
-                                // 1. Matikan CSRF untuk SEMUA request
-                                .csrf(AbstractHttpConfigurer::disable)
-                                .exceptionHandling(exception -> exception.authenticationEntryPoint((request, response,
-                                                authException) -> {
-                                        System.out.println("LOG SECURITY: Request Ke : "
-                                                        + request.getRequestURI() + " Ditolak Karena : "
-                                                        + authException.getMessage());
-                                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                                }))
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                // 1. Matikan CSRF untuk SEMUA request
+                .csrf(AbstractHttpConfigurer::disable)
+                .exceptionHandling(exception -> exception.authenticationEntryPoint((request, response,
+                                                                                    authException) -> {
+                    System.out.println("LOG SECURITY: Request Ke : "
+                            + request.getRequestURI() + " Ditolak Karena : "
+                            + authException.getMessage());
+                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                }))
 
-                                // 2. Atur siapa yang boleh lewat
-                                .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers("/api/users/**", "/api/auth/**", "/api/category/**",
-                                                                "/api/wallet/**", "/error")
-                                                .permitAll())
+                // 2. Atur siapa yang boleh lewat
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/api/users/**", "/api/auth/**", "/api/category/**",
+                                "/api/categories/", "/api/wallets/",
+                                "/api/wallet/**", "/api/transaction/**", "/api/transactions/", "/error")
+                        .permitAll())
 
-                                // 3. Karena pakai JWT, buat session jadi STATELESS
-                                .sessionManagement(session -> session
-                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
+                // 3. Karena pakai JWT, buat session jadi STATELESS
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-                return http.build();
-        }
+        return http.build();
+    }
 
-        @Bean
-        public PasswordEncoder passwordEncoder() {
-                return new BCryptPasswordEncoder();
-        }
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
 }

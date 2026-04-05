@@ -8,6 +8,7 @@ import lombok.Setter;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.UUID;
 
@@ -23,7 +24,7 @@ public class Transaction {
     @JdbcTypeCode(SqlTypes.UUID)
     private UUID id;
     private Long amount;
-    private Date date;
+    private LocalDateTime date;
     private String description;
     @ManyToOne
     @JoinColumn(name = "category_id")
