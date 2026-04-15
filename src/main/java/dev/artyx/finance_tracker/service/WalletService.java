@@ -6,10 +6,10 @@ import dev.artyx.finance_tracker.model.wallet.CreateWalletRequest;
 import dev.artyx.finance_tracker.model.wallet.UpdateWalletRequest;
 import dev.artyx.finance_tracker.model.wallet.WalletResponse;
 import dev.artyx.finance_tracker.repository.WalletRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -56,13 +56,13 @@ public class WalletService {
         walletRepository.delete(wallet);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<WalletResponse> getAllWallets(User user) {
         List<Wallet> wallet = walletRepository.findAllByUser(user);
         return wallet.stream().map(this::toWalletResponse).toList();
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public WalletResponse get(User user, UUID id) {
         Wallet wallet = walletRepository.findByUserAndId(user, id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Wallet not found"));
         return toWalletResponse(wallet);

@@ -6,10 +6,10 @@ import dev.artyx.finance_tracker.model.category.CategoryResponse;
 import dev.artyx.finance_tracker.model.category.CreateCategoryRequest;
 import dev.artyx.finance_tracker.model.category.UpdateCategoryRequest;
 import dev.artyx.finance_tracker.repository.CategoryRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
@@ -59,13 +59,13 @@ public class CategoryService {
         categoryRepository.delete(category);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public CategoryResponse getCategory(Long id) {
         Category category = categoryRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
         return toCategoryResponse(category);
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<CategoryResponse> getAllCategories() {
         List<Category> categories = categoryRepository.findAll();
         return categories.stream().map(this::toCategoryResponse).toList();

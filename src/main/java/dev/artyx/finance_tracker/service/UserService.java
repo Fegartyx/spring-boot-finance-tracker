@@ -5,11 +5,11 @@ import dev.artyx.finance_tracker.model.user.RegisterUserRequest;
 import dev.artyx.finance_tracker.model.user.UpdateUserRequest;
 import dev.artyx.finance_tracker.model.user.UserResponse;
 import dev.artyx.finance_tracker.repository.UserRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Objects;
@@ -38,6 +38,7 @@ public class UserService {
         userRepository.save(user);
     }
 
+    @Transactional(readOnly = true)
     public UserResponse get(User user) {
         return UserResponse.builder().username(user.getUsername()).email(user.getEmail()).build();
     }
