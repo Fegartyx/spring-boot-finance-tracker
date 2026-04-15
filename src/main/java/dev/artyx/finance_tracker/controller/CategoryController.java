@@ -7,6 +7,7 @@ import dev.artyx.finance_tracker.model.category.CreateCategoryRequest;
 import dev.artyx.finance_tracker.model.category.UpdateCategoryRequest;
 import dev.artyx.finance_tracker.service.CategoryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,7 +18,7 @@ public class CategoryController {
     private final CategoryService categoryService;
 
     @PostMapping(path = "/api/category", consumes = "application/json", produces = "application/json")
-    public WebResponse<String> createCategory(User user, @RequestBody CreateCategoryRequest request) {
+    public WebResponse<String> createCategory(@AuthenticationPrincipal User user, @RequestBody CreateCategoryRequest request) {
         categoryService.createCategory(request);
         return WebResponse.<String>builder()
                 .data("Category created successfully")
@@ -25,7 +26,7 @@ public class CategoryController {
     }
 
     @PutMapping(path = "/api/category/{categoryId}", consumes = "application/json", produces = "application/json")
-    public WebResponse<CategoryResponse> updateCategory(User user, @PathVariable Long categoryId, @RequestBody UpdateCategoryRequest request) {
+    public WebResponse<CategoryResponse> updateCategory(@AuthenticationPrincipal User user, @PathVariable Long categoryId, @RequestBody UpdateCategoryRequest request) {
         request.setCategoryId(categoryId);
         CategoryResponse categoryResponse = categoryService.editCategory(request);
         return WebResponse.<CategoryResponse>builder()
@@ -34,7 +35,7 @@ public class CategoryController {
     }
 
     @DeleteMapping(path = "/api/category/{categoryId}", produces = "application/json")
-    public WebResponse<String> deleteCategory(User user, @PathVariable Long categoryId) {
+    public WebResponse<String> deleteCategory(@AuthenticationPrincipal User user, @PathVariable Long categoryId) {
         categoryService.deleteCategory(categoryId);
         return WebResponse.<String>builder()
                 .data("Category deleted successfully")

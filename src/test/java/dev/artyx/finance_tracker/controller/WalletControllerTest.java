@@ -1,7 +1,6 @@
 package dev.artyx.finance_tracker.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.artyx.finance_tracker.entity.User;
 import dev.artyx.finance_tracker.model.WebResponse;
 import dev.artyx.finance_tracker.model.user.LoginUserRequest;
 import dev.artyx.finance_tracker.model.user.RegisterUserRequest;
@@ -31,20 +30,17 @@ class WalletControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
-
     @Autowired
     private UserRepository userRepository;
-
     @Autowired
     private WalletRepository walletRepository;
-
     @Autowired
     private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
-        userRepository.deleteAll();
         walletRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     // ===== HELPER METHODS =====
@@ -86,19 +82,14 @@ class WalletControllerTest {
         createRequest.setName(name);
         createRequest.setBalance(balance);
 
-        String response = mockMvc.perform(post("/api/wallet")
+        mockMvc.perform(post("/api/wallet")
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(createRequest)))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+                .andExpect(status().isOk());
 
-        // Get the created wallet from repository
-        var wallets = walletRepository.findAll();
-        return (UUID) wallets.getLast().getId();
+        return walletRepository.findAll().getLast().getId();
     }
 
     // ===== CREATE WALLET TESTS =====
@@ -125,7 +116,7 @@ class WalletControllerTest {
         mockMvc.perform(post("/api/wallet")
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", "invalid-token")
+                        .header("Authorization", "Bearer invalid-token")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
     }
@@ -142,14 +133,11 @@ class WalletControllerTest {
         mockMvc.perform(post("/api/wallet")
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
                     assertEquals("Wallet created successfully", response.getData());
                     System.out.println(response);
                 });
@@ -167,7 +155,7 @@ class WalletControllerTest {
         mockMvc.perform(post("/api/wallet")
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
@@ -184,7 +172,7 @@ class WalletControllerTest {
         mockMvc.perform(post("/api/wallet")
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
@@ -201,7 +189,7 @@ class WalletControllerTest {
         mockMvc.perform(post("/api/wallet")
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
@@ -218,39 +206,14 @@ class WalletControllerTest {
         mockMvc.perform(post("/api/wallet")
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
                     assertEquals("Wallet created successfully", response.getData());
                     System.out.println(response);
                 });
-    }
-
-    @Test
-    void testCreateWalletUnauthorizedExpiredToken() throws Exception {
-        registerUser("testuser", "password123", "test@gmail.com");
-        String token = loginAndGetToken("testuser", "password123");
-
-        // Set token expiry to past (expired)
-        User user = userRepository.findByUsername("testuser");
-        user.setTokenExpiry(System.currentTimeMillis() - 10000);
-        userRepository.save(user);
-
-        var request = new CreateWalletRequest();
-        request.setName("Main Wallet");
-        request.setBalance(10000L);
-
-        mockMvc.perform(post("/api/wallet")
-                        .accept(MediaType.APPLICATION_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isUnauthorized());
     }
 
     // ===== UPDATE WALLET TESTS =====
@@ -259,7 +222,6 @@ class WalletControllerTest {
     void testUpdateWalletUnauthorizedNoToken() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         UUID walletId = createWallet(token, "Main Wallet", 10000L);
 
         var request = new UpdateWalletRequest();
@@ -276,7 +238,6 @@ class WalletControllerTest {
     void testUpdateWalletUnauthorizedInvalidToken() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         UUID walletId = createWallet(token, "Main Wallet", 10000L);
 
         var request = new UpdateWalletRequest();
@@ -285,7 +246,7 @@ class WalletControllerTest {
         mockMvc.perform(put("/api/wallet/{walletId}", walletId)
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", "invalid-token")
+                        .header("Authorization", "Bearer invalid-token")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
     }
@@ -294,7 +255,6 @@ class WalletControllerTest {
     void testUpdateWalletSuccessNameOnly() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         UUID walletId = createWallet(token, "Main Wallet", 10000L);
 
         var request = new UpdateWalletRequest();
@@ -303,14 +263,11 @@ class WalletControllerTest {
         mockMvc.perform(put("/api/wallet/{walletId}", walletId)
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
                     assertEquals("Wallet updated successfully", response.getData());
                     System.out.println(response);
                 });
@@ -320,7 +277,6 @@ class WalletControllerTest {
     void testUpdateWalletSuccessBalanceOnly() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         UUID walletId = createWallet(token, "Main Wallet", 10000L);
 
         var request = new UpdateWalletRequest();
@@ -329,14 +285,11 @@ class WalletControllerTest {
         mockMvc.perform(put("/api/wallet/{walletId}", walletId)
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
                     assertEquals("Wallet updated successfully", response.getData());
                     System.out.println(response);
                 });
@@ -346,7 +299,6 @@ class WalletControllerTest {
     void testUpdateWalletSuccessAllFields() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         UUID walletId = createWallet(token, "Main Wallet", 10000L);
 
         var request = new UpdateWalletRequest();
@@ -356,14 +308,11 @@ class WalletControllerTest {
         mockMvc.perform(put("/api/wallet/{walletId}", walletId)
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
                     assertEquals("Wallet updated successfully", response.getData());
                     System.out.println(response);
                 });
@@ -373,7 +322,6 @@ class WalletControllerTest {
     void testUpdateWalletValidationErrorNameTooLong() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         UUID walletId = createWallet(token, "Main Wallet", 10000L);
 
         var request = new UpdateWalletRequest();
@@ -382,39 +330,15 @@ class WalletControllerTest {
         mockMvc.perform(put("/api/wallet/{walletId}", walletId)
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testUpdateWalletUnauthorizedExpiredToken() throws Exception {
-        registerUser("testuser", "password123", "test@gmail.com");
-        String token = loginAndGetToken("testuser", "password123");
-
-        UUID walletId = createWallet(token, "Main Wallet", 10000L);
-
-        // Set token expiry to past (expired)
-        User user = userRepository.findByUsername("testuser");
-        user.setTokenExpiry(System.currentTimeMillis() - 10000);
-        userRepository.save(user);
-
-        var request = new UpdateWalletRequest();
-        request.setName("Updated Wallet");
-
-        mockMvc.perform(put("/api/wallet/{walletId}", walletId)
-                        .accept(MediaType.APPLICATION_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isUnauthorized());
     }
 
     @Test
     void testUpdateWalletSuccessEmptyBody() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         UUID walletId = createWallet(token, "Main Wallet", 10000L);
 
         var request = new UpdateWalletRequest();
@@ -422,14 +346,11 @@ class WalletControllerTest {
         mockMvc.perform(put("/api/wallet/{walletId}", walletId)
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
                     System.out.println(response);
                 });
     }
@@ -440,7 +361,6 @@ class WalletControllerTest {
     void testDeleteWalletUnauthorizedNoToken() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         UUID walletId = createWallet(token, "Main Wallet", 10000L);
 
         mockMvc.perform(delete("/api/wallet/{walletId}", walletId)
@@ -452,12 +372,11 @@ class WalletControllerTest {
     void testDeleteWalletUnauthorizedInvalidToken() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         UUID walletId = createWallet(token, "Main Wallet", 10000L);
 
         mockMvc.perform(delete("/api/wallet/{walletId}", walletId)
                         .accept(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", "invalid-token"))
+                        .header("Authorization", "Bearer invalid-token"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -465,43 +384,19 @@ class WalletControllerTest {
     void testDeleteWalletSuccess() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         UUID walletId = createWallet(token, "Main Wallet", 10000L);
 
         mockMvc.perform(delete("/api/wallet/{walletId}", walletId)
                         .accept(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token))
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
                     assertEquals("Wallet deleted successfully", response.getData());
                     System.out.println(response);
                 });
 
-        // Verify wallet is deleted
-        var wallet = walletRepository.findById(walletId);
-        assertFalse(wallet.isPresent());
-    }
-
-    @Test
-    void testDeleteWalletUnauthorizedExpiredToken() throws Exception {
-        registerUser("testuser", "password123", "test@gmail.com");
-        String token = loginAndGetToken("testuser", "password123");
-
-        UUID walletId = createWallet(token, "Main Wallet", 10000L);
-
-        // Set token expiry to past (expired)
-        User user = userRepository.findByUsername("testuser");
-        user.setTokenExpiry(System.currentTimeMillis() - 10000);
-        userRepository.save(user);
-
-        mockMvc.perform(delete("/api/wallet/{walletId}", walletId)
-                        .accept(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token))
-                .andExpect(status().isUnauthorized());
+        assertFalse(walletRepository.findById(walletId).isPresent());
     }
 
     // ===== GET WALLET TESTS =====
@@ -510,17 +405,14 @@ class WalletControllerTest {
     void testGetWalletByIdSuccess() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         UUID walletId = createWallet(token, "Main Wallet", 10000L);
 
         mockMvc.perform(get("/api/wallet/{walletId}", walletId)
-                        .accept(MediaType.APPLICATION_JSON).header("X-API-TOKEN", token))
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
                     var dataMap = objectMapper.convertValue(response.getData(), Map.class);
                     assertEquals("Main Wallet", dataMap.get("name"));
                     assertEquals(10000L, ((Number) dataMap.get("balance")).longValue());
@@ -538,15 +430,13 @@ class WalletControllerTest {
         createWallet(token, "Cash", 5000L);
 
         mockMvc.perform(get("/api/wallets")
-                        .accept(MediaType.APPLICATION_JSON).header("X-API-TOKEN", token))
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
-                    var dataMap = objectMapper.convertValue(response.getData(), List.class);
-                    assertEquals(3, dataMap.size());
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
+                    var dataList = objectMapper.convertValue(response.getData(), List.class);
+                    assertEquals(3, dataList.size());
                     System.out.println(response);
                 });
     }

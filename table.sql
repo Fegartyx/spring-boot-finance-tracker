@@ -6,8 +6,6 @@ CREATE TABLE users
     username     VARCHAR(255) NOT NULL UNIQUE,
     password     VARCHAR(255) NOT NULL,
     email        VARCHAR(255) NOT NULL UNIQUE,
-    token        VARCHAR(255) UNIQUE,
-    token_expiry BIGINT
 );
 
 CREATE TABLE wallet

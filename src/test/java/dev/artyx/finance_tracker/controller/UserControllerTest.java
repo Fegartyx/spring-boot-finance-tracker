@@ -1,7 +1,6 @@
 package dev.artyx.finance_tracker.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import dev.artyx.finance_tracker.entity.User;
 import dev.artyx.finance_tracker.model.user.LoginUserRequest;
 import dev.artyx.finance_tracker.model.user.RegisterUserRequest;
 import dev.artyx.finance_tracker.model.user.UpdateUserRequest;
@@ -32,99 +31,6 @@ class UserControllerTest {
     @BeforeEach
     void setUp() {
         userRepository.deleteAll();
-    }
-
-    @Test
-    void testRegisterFailedBlankFields() throws Exception {
-        var request = new RegisterUserRequest();
-
-        mockMvc.perform(post("/api/users").accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
-                .andExpectAll(
-                        status().isBadRequest()
-                );
-    }
-
-    @Test
-    void testRegisterFailedDuplicateUsername() throws Exception {
-        var request = new RegisterUserRequest();
-        request.setUsername("testuser");
-        request.setPassword("password123");
-        request.setEmail("test@gmail.com");
-
-        mockMvc.perform(post("/api/users").accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
-
-        mockMvc.perform(post("/api/users").accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testRegisterSuccess() throws Exception {
-        var request = new RegisterUserRequest();
-        request.setUsername("testuser");
-        request.setPassword("password123");
-        request.setEmail("test@gmail.com");
-
-        mockMvc.perform(post("/api/users").accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
-                .andExpectAll(
-                        status().isOk()
-                ).andDo(
-                        result -> {
-                            var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
-                            System.out.println(response);
-                            assertEquals("User registered successfully", response.getData());
-                        }
-                );
-    }
-
-    @Test
-    void testGetCurrentUserUnauthorizedNoToken() throws Exception {
-        mockMvc.perform(get("/api/users/current")
-                        .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void testGetCurrentUserUnauthorizedInvalidToken() throws Exception {
-        mockMvc.perform(get("/api/users/current")
-                        .accept(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", "invalid-token-12345"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void testGetCurrentUserSuccess() throws Exception {
-        registerUser("testuser", "password123", "test@gmail.com");
-        String token = loginAndGetToken("testuser", "password123");
-
-        mockMvc.perform(get("/api/users/current")
-                        .accept(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token))
-                .andExpect(status().isOk())
-                .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
-                    System.out.println(response);
-                });
-    }
-
-    @Test
-    void testGetCurrentUserUnauthorizedExpiredToken() throws Exception {
-        registerUser("testuser", "password123", "test@gmail.com");
-        String token = loginAndGetToken("testuser", "password123");
-
-        // Set token expiry to past (expired)
-        User user = userRepository.findByUsername("testuser");
-        user.setTokenExpiry(System.currentTimeMillis() - 10000); // 10 seconds ago
-        userRepository.save(user);
-
-        // Try to access with expired token
-        mockMvc.perform(get("/api/users/current")
-                        .accept(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token))
-                .andExpect(status().isUnauthorized());
     }
 
     // ===== HELPER METHODS =====
@@ -161,6 +67,81 @@ class UserControllerTest {
         return (String) dataMap.get("token");
     }
 
+    // ===== REGISTER TESTS =====
+
+    @Test
+    void testRegisterFailedBlankFields() throws Exception {
+        var request = new RegisterUserRequest();
+
+        mockMvc.perform(post("/api/users").accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+                .andExpectAll(status().isBadRequest());
+    }
+
+    @Test
+    void testRegisterFailedDuplicateUsername() throws Exception {
+        var request = new RegisterUserRequest();
+        request.setUsername("testuser");
+        request.setPassword("password123");
+        request.setEmail("test@gmail.com");
+
+        mockMvc.perform(post("/api/users").accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/users").accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void testRegisterSuccess() throws Exception {
+        var request = new RegisterUserRequest();
+        request.setUsername("testuser");
+        request.setPassword("password123");
+        request.setEmail("test@gmail.com");
+
+        mockMvc.perform(post("/api/users").accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(request)))
+                .andExpectAll(status().isOk())
+                .andDo(result -> {
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
+                    System.out.println(response);
+                    assertEquals("User registered successfully", response.getData());
+                });
+    }
+
+    // ===== GET CURRENT USER TESTS =====
+
+    @Test
+    void testGetCurrentUserUnauthorizedNoToken() throws Exception {
+        mockMvc.perform(get("/api/users/current")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void testGetCurrentUserUnauthorizedInvalidToken() throws Exception {
+        mockMvc.perform(get("/api/users/current")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer invalid-token-12345"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void testGetCurrentUserSuccess() throws Exception {
+        registerUser("testuser", "password123", "test@gmail.com");
+        String token = loginAndGetToken("testuser", "password123");
+
+        mockMvc.perform(get("/api/users/current")
+                        .accept(MediaType.APPLICATION_JSON)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andDo(result -> {
+                    var response = objectMapper.readValue(
+                            result.getResponse().getContentAsString(),
+                            WebResponse.class
+                    );
+                    System.out.println(response);
+                });
+    }
+
     // ===== UPDATE USER TESTS =====
 
     @Test
@@ -184,29 +165,7 @@ class UserControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest))
-                        .header("X-API-TOKEN", "invalid-token"))
-                .andExpect(status().isUnauthorized());
-    }
-
-    @Test
-    void testUpdateUserUnauthorizedExpiredToken() throws Exception {
-        registerUser("testuser", "password123", "test@gmail.com");
-        String token = loginAndGetToken("testuser", "password123");
-
-        // Set token expiry to past
-        User user = userRepository.findByUsername("testuser");
-        user.setTokenExpiry(System.currentTimeMillis() - 10000);
-        userRepository.save(user);
-
-        // Try to update with expired token
-        var updateRequest = new UpdateUserRequest();
-        updateRequest.setUsername("newusername");
-
-        mockMvc.perform(patch("/api/users/current")
-                        .accept(MediaType.APPLICATION_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updateRequest))
-                        .header("X-API-TOKEN", token))
+                        .header("Authorization", "Bearer invalid-token"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -215,15 +174,14 @@ class UserControllerTest {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
 
-        // Try to update with username > 100 characters
         var updateRequest = new UpdateUserRequest();
-        updateRequest.setUsername("a".repeat(101)); // 101 characters
+        updateRequest.setUsername("a".repeat(101));
 
         mockMvc.perform(patch("/api/users/current")
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest))
-                        .header("X-API-TOKEN", token))
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isBadRequest());
     }
 
@@ -232,15 +190,14 @@ class UserControllerTest {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
 
-        // Try to update with password > 100 characters
         var updateRequest = new UpdateUserRequest();
-        updateRequest.setPassword("a".repeat(101)); // 101 characters
+        updateRequest.setPassword("a".repeat(101));
 
         mockMvc.perform(patch("/api/users/current")
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest))
-                        .header("X-API-TOKEN", token))
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isBadRequest());
     }
 
@@ -249,15 +206,14 @@ class UserControllerTest {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
 
-        // Try to update with email > 255 characters
         var updateRequest = new UpdateUserRequest();
-        updateRequest.setEmail("a".repeat(256) + "@gmail.com"); // > 255 characters
+        updateRequest.setEmail("a".repeat(256) + "@gmail.com");
 
         mockMvc.perform(patch("/api/users/current")
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest))
-                        .header("X-API-TOKEN", token))
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isBadRequest());
     }
 
@@ -266,7 +222,6 @@ class UserControllerTest {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
 
-        // Update username only
         var updateRequest = new UpdateUserRequest();
         updateRequest.setUsername("newusername");
 
@@ -274,7 +229,7 @@ class UserControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest))
-                        .header("X-API-TOKEN", token))
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andDo(result -> {
                     var response = objectMapper.readValue(
@@ -293,7 +248,6 @@ class UserControllerTest {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
 
-        // Update email only
         var updateRequest = new UpdateUserRequest();
         updateRequest.setEmail("newemail@gmail.com");
 
@@ -301,7 +255,7 @@ class UserControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest))
-                        .header("X-API-TOKEN", token))
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andDo(result -> {
                     var response = objectMapper.readValue(
@@ -320,7 +274,6 @@ class UserControllerTest {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
 
-        // Update password only
         var updateRequest = new UpdateUserRequest();
         updateRequest.setPassword("newpassword456");
 
@@ -328,7 +281,7 @@ class UserControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest))
-                        .header("X-API-TOKEN", token))
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andDo(result -> {
                     var response = objectMapper.readValue(
@@ -336,7 +289,6 @@ class UserControllerTest {
                             WebResponse.class
                     );
                     var dataMap = objectMapper.convertValue(response.getData(), java.util.Map.class);
-                    // Password should not be in response, only username and email
                     assertEquals("testuser", dataMap.get("username"));
                     assertEquals("test@gmail.com", dataMap.get("email"));
                     assertNull(dataMap.get("password"));
@@ -349,7 +301,6 @@ class UserControllerTest {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
 
-        // Update all fields
         var updateRequest = new UpdateUserRequest();
         updateRequest.setUsername("newusername");
         updateRequest.setEmail("newemail@gmail.com");
@@ -359,7 +310,7 @@ class UserControllerTest {
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest))
-                        .header("X-API-TOKEN", token))
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andDo(result -> {
                     var response = objectMapper.readValue(
@@ -379,14 +330,13 @@ class UserControllerTest {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
 
-        // Update with empty body (all fields null)
         var updateRequest = new UpdateUserRequest();
 
         mockMvc.perform(patch("/api/users/current")
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(updateRequest))
-                        .header("X-API-TOKEN", token))
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andDo(result -> {
                     var response = objectMapper.readValue(
@@ -394,7 +344,6 @@ class UserControllerTest {
                             WebResponse.class
                     );
                     var dataMap = objectMapper.convertValue(response.getData(), java.util.Map.class);
-                    // Username and email should remain unchanged
                     assertEquals("testuser", dataMap.get("username"));
                     assertEquals("test@gmail.com", dataMap.get("email"));
                     System.out.println(response);

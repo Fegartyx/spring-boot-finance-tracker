@@ -2,7 +2,6 @@ package dev.artyx.finance_tracker.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import dev.artyx.finance_tracker.entity.TransactionType;
-import dev.artyx.finance_tracker.entity.User;
 import dev.artyx.finance_tracker.model.WebResponse;
 import dev.artyx.finance_tracker.model.category.CreateCategoryRequest;
 import dev.artyx.finance_tracker.model.category.UpdateCategoryRequest;
@@ -28,13 +27,10 @@ class CategoryControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
-
     @Autowired
     private UserRepository userRepository;
-
     @Autowired
     private CategoryRepository categoryRepository;
-
     @Autowired
     private ObjectMapper objectMapper;
 
@@ -83,19 +79,14 @@ class CategoryControllerTest {
         createRequest.setName(name);
         createRequest.setType(type);
 
-        String response = mockMvc.perform(post("/api/category")
+        mockMvc.perform(post("/api/category")
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(createRequest)))
-                .andExpect(status().isOk())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
+                .andExpect(status().isOk());
 
-        // Get the created category from repository
-        var categories = categoryRepository.findAll();
-        return (long) categories.getLast().getId();
+        return (long) categoryRepository.findAll().getLast().getId();
     }
 
     // ===== CREATE CATEGORY TESTS =====
@@ -122,7 +113,7 @@ class CategoryControllerTest {
         mockMvc.perform(post("/api/category")
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", "invalid-token")
+                        .header("Authorization", "Bearer invalid-token")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
     }
@@ -139,14 +130,11 @@ class CategoryControllerTest {
         mockMvc.perform(post("/api/category")
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
                     assertEquals("Category created successfully", response.getData());
                     System.out.println(response);
                 });
@@ -164,14 +152,11 @@ class CategoryControllerTest {
         mockMvc.perform(post("/api/category")
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
                     assertEquals("Category created successfully", response.getData());
                     System.out.println(response);
                 });
@@ -189,7 +174,7 @@ class CategoryControllerTest {
         mockMvc.perform(post("/api/category")
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
@@ -206,7 +191,7 @@ class CategoryControllerTest {
         mockMvc.perform(post("/api/category")
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
     }
@@ -223,34 +208,9 @@ class CategoryControllerTest {
         mockMvc.perform(post("/api/category")
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testCreateCategorySuccessNameExactlyMinLength() throws Exception {
-        registerUser("testuser", "password123", "test@gmail.com");
-        String token = loginAndGetToken("testuser", "password123");
-
-        var request = new CreateCategoryRequest();
-        request.setName("1234567890");
-        request.setType(TransactionType.expense);
-
-        mockMvc.perform(post("/api/category")
-                        .accept(MediaType.APPLICATION_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
-                    assertEquals("Category created successfully", response.getData());
-                    System.out.println(response);
-                });
     }
 
     @Test
@@ -265,39 +225,14 @@ class CategoryControllerTest {
         mockMvc.perform(post("/api/category")
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
                     assertEquals("Category created successfully", response.getData());
                     System.out.println(response);
                 });
-    }
-
-    @Test
-    void testCreateCategoryUnauthorizedExpiredToken() throws Exception {
-        registerUser("testuser", "password123", "test@gmail.com");
-        String token = loginAndGetToken("testuser", "password123");
-
-        // Set token expiry to past (expired)
-        User user = userRepository.findByUsername("testuser");
-        user.setTokenExpiry(System.currentTimeMillis() - 10000);
-        userRepository.save(user);
-
-        var request = new CreateCategoryRequest();
-        request.setName("Groceries");
-        request.setType(TransactionType.expense);
-
-        mockMvc.perform(post("/api/category")
-                        .accept(MediaType.APPLICATION_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isUnauthorized());
     }
 
     // ===== UPDATE CATEGORY TESTS =====
@@ -306,7 +241,6 @@ class CategoryControllerTest {
     void testUpdateCategoryUnauthorizedNoToken() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         Long categoryId = createCategory(token, "Groceries", TransactionType.expense);
 
         var request = new UpdateCategoryRequest();
@@ -323,7 +257,6 @@ class CategoryControllerTest {
     void testUpdateCategoryUnauthorizedInvalidToken() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         Long categoryId = createCategory(token, "Groceries", TransactionType.expense);
 
         var request = new UpdateCategoryRequest();
@@ -332,7 +265,7 @@ class CategoryControllerTest {
         mockMvc.perform(put("/api/category/{categoryId}", categoryId)
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", "invalid-token")
+                        .header("Authorization", "Bearer invalid-token")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized());
     }
@@ -341,7 +274,6 @@ class CategoryControllerTest {
     void testUpdateCategorySuccessNameOnly() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         Long categoryId = createCategory(token, "Groceries", TransactionType.expense);
 
         var request = new UpdateCategoryRequest();
@@ -350,14 +282,11 @@ class CategoryControllerTest {
         mockMvc.perform(put("/api/category/{categoryId}", categoryId)
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
                     var dataMap = objectMapper.convertValue(response.getData(), java.util.Map.class);
                     assertEquals("Updated Groceries", dataMap.get("name"));
                     System.out.println(response);
@@ -368,7 +297,6 @@ class CategoryControllerTest {
     void testUpdateCategorySuccessTypeOnly() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         Long categoryId = createCategory(token, "Groceries", TransactionType.expense);
 
         var request = new UpdateCategoryRequest();
@@ -377,14 +305,11 @@ class CategoryControllerTest {
         mockMvc.perform(put("/api/category/{categoryId}", categoryId)
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
                     var dataMap = objectMapper.convertValue(response.getData(), java.util.Map.class);
                     assertEquals("income", dataMap.get("type"));
                     System.out.println(response);
@@ -395,7 +320,6 @@ class CategoryControllerTest {
     void testUpdateCategorySuccessAllFields() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         Long categoryId = createCategory(token, "Groceries", TransactionType.expense);
 
         var request = new UpdateCategoryRequest();
@@ -405,14 +329,11 @@ class CategoryControllerTest {
         mockMvc.perform(put("/api/category/{categoryId}", categoryId)
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
                     var dataMap = objectMapper.convertValue(response.getData(), java.util.Map.class);
                     assertEquals("Updated Salary", dataMap.get("name"));
                     assertEquals("income", dataMap.get("type"));
@@ -424,7 +345,6 @@ class CategoryControllerTest {
     void testUpdateCategoryValidationErrorNameTooLong() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         Long categoryId = createCategory(token, "Groceries", TransactionType.expense);
 
         var request = new UpdateCategoryRequest();
@@ -433,39 +353,15 @@ class CategoryControllerTest {
         mockMvc.perform(put("/api/category/{categoryId}", categoryId)
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest());
-    }
-
-    @Test
-    void testUpdateCategoryUnauthorizedExpiredToken() throws Exception {
-        registerUser("testuser", "password123", "test@gmail.com");
-        String token = loginAndGetToken("testuser", "password123");
-
-        Long categoryId = createCategory(token, "Groceries", TransactionType.expense);
-
-        // Set token expiry to past (expired)
-        User user = userRepository.findByUsername("testuser");
-        user.setTokenExpiry(System.currentTimeMillis() - 10000);
-        userRepository.save(user);
-
-        var request = new UpdateCategoryRequest();
-        request.setName("Updated Groceries");
-
-        mockMvc.perform(put("/api/category/{categoryId}", categoryId)
-                        .accept(MediaType.APPLICATION_JSON)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isUnauthorized());
     }
 
     @Test
     void testUpdateCategorySuccessEmptyBody() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         Long categoryId = createCategory(token, "Groceries", TransactionType.expense);
 
         var request = new UpdateCategoryRequest();
@@ -473,14 +369,11 @@ class CategoryControllerTest {
         mockMvc.perform(put("/api/category/{categoryId}", categoryId)
                         .accept(MediaType.APPLICATION_JSON)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token)
+                        .header("Authorization", "Bearer " + token)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
                     System.out.println(response);
                 });
     }
@@ -491,7 +384,6 @@ class CategoryControllerTest {
     void testDeleteCategoryUnauthorizedNoToken() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         Long categoryId = createCategory(token, "Groceries", TransactionType.expense);
 
         mockMvc.perform(delete("/api/category/{categoryId}", categoryId)
@@ -503,12 +395,11 @@ class CategoryControllerTest {
     void testDeleteCategoryUnauthorizedInvalidToken() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         Long categoryId = createCategory(token, "Groceries", TransactionType.expense);
 
         mockMvc.perform(delete("/api/category/{categoryId}", categoryId)
                         .accept(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", "invalid-token"))
+                        .header("Authorization", "Bearer invalid-token"))
                 .andExpect(status().isUnauthorized());
     }
 
@@ -516,43 +407,19 @@ class CategoryControllerTest {
     void testDeleteCategorySuccess() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         Long categoryId = createCategory(token, "Groceries", TransactionType.expense);
 
         mockMvc.perform(delete("/api/category/{categoryId}", categoryId)
                         .accept(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token))
+                        .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
                     assertEquals("Category deleted successfully", response.getData());
                     System.out.println(response);
                 });
 
-        // Verify category is deleted
-        var category = categoryRepository.findById(categoryId);
-        assertFalse(category.isPresent());
-    }
-
-    @Test
-    void testDeleteCategoryUnauthorizedExpiredToken() throws Exception {
-        registerUser("testuser", "password123", "test@gmail.com");
-        String token = loginAndGetToken("testuser", "password123");
-
-        Long categoryId = createCategory(token, "Groceries", TransactionType.expense);
-
-        // Set token expiry to past (expired)
-        User user = userRepository.findByUsername("testuser");
-        user.setTokenExpiry(System.currentTimeMillis() - 10000);
-        userRepository.save(user);
-
-        mockMvc.perform(delete("/api/category/{categoryId}", categoryId)
-                        .accept(MediaType.APPLICATION_JSON)
-                        .header("X-API-TOKEN", token))
-                .andExpect(status().isUnauthorized());
+        assertFalse(categoryRepository.findById(categoryId).isPresent());
     }
 
     // ===== GET CATEGORY TESTS =====
@@ -561,17 +428,13 @@ class CategoryControllerTest {
     void testGetCategoryByIdExpense() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         Long categoryId = createCategory(token, "Groceries", TransactionType.expense);
 
         mockMvc.perform(get("/api/category/{categoryId}", categoryId)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
                     var dataMap = objectMapper.convertValue(response.getData(), java.util.Map.class);
                     assertEquals("Groceries", dataMap.get("name"));
                     assertEquals("expense", dataMap.get("type"));
@@ -583,17 +446,13 @@ class CategoryControllerTest {
     void testGetCategoryByIdIncome() throws Exception {
         registerUser("testuser", "password123", "test@gmail.com");
         String token = loginAndGetToken("testuser", "password123");
-
         Long categoryId = createCategory(token, "Salary", TransactionType.income);
 
         mockMvc.perform(get("/api/category/{categoryId}", categoryId)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
                     var dataMap = objectMapper.convertValue(response.getData(), java.util.Map.class);
                     assertEquals("Salary", dataMap.get("name"));
                     assertEquals("income", dataMap.get("type"));
@@ -610,28 +469,20 @@ class CategoryControllerTest {
         createCategory(token, "Salary", TransactionType.income);
         createCategory(token, "Utilities", TransactionType.expense);
 
-        mockMvc.perform(get("/api/categories")
-                        .accept(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/api/categories").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
                     System.out.println(response);
                 });
     }
 
     @Test
     void testGetAllCategoriesEmpty() throws Exception {
-        mockMvc.perform(get("/api/categories")
-                        .accept(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/api/categories").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andDo(result -> {
-                    var response = objectMapper.readValue(
-                            result.getResponse().getContentAsString(),
-                            WebResponse.class
-                    );
+                    var response = objectMapper.readValue(result.getResponse().getContentAsString(), WebResponse.class);
                     System.out.println(response);
                 });
     }

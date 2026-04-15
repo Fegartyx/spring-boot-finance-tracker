@@ -1,5 +1,6 @@
 package dev.artyx.finance_tracker.controller;
 
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,7 +30,7 @@ public class UserController {
     }
 
     @GetMapping(path = "/api/users/current", produces = "application/json")
-    public WebResponse<UserResponse> get(User user) {
+    public WebResponse<UserResponse> get(@AuthenticationPrincipal User user) {
         UserResponse userResponse = userService.get(user);
         return WebResponse.<UserResponse>builder()
                 .data(userResponse)
@@ -37,7 +38,7 @@ public class UserController {
     }
 
     @PatchMapping(path = "/api/users/current", consumes = "application/json", produces = "application/json")
-    public WebResponse<UserResponse> update(User user, @RequestBody UpdateUserRequest request) {
+    public WebResponse<UserResponse> update(@AuthenticationPrincipal User user, @RequestBody UpdateUserRequest request) {
         UserResponse userResponse = userService.update(user, request);
         return WebResponse.<UserResponse>builder()
                 .data(userResponse)

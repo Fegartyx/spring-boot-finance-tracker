@@ -26,7 +26,4 @@ public class User {
     private String username;
     private String password;
     private String email;
-    private String token;
-    @Column(name = "token_expiry")
-    private Long tokenExpiry;
 }
